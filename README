@@ -1,0 +1,9 @@
+This is the minihost example from Steinberg VSTSDK-2.4, with added support for building on Linux
+
+I'm not completely sure about the License here, if Steinberg will disapprove of this or it's ok to publish modified example code
+
+In any case, as for my code it's provided as-is, free as in beer, use it as you wish, I won't be liable for any damages etc etc
+
+You might need to adjust VST_SDK in the Makefile, to point to where you have your vstsdk2.4
+
+/Johan

@@ -1,3 +1,6 @@
+// Added support for Linux/Xlib
+// Johan Ekenberg, johan@ekenberg.se
+
 //-------------------------------------------------------------------------------------------------------
 // VST Plug-Ins SDK
 // Version 2.4		$Date: 2006/11/13 09:08:28 $
@@ -9,6 +12,9 @@
 //
 // © 2006, Steinberg Media Technologies, All Rights Reserved
 //-------------------------------------------------------------------------------------------------------
+#if _LINUX
+#define __cdecl
+#endif
 
 #include "pluginterfaces/vst2.x/aeffectx.h"
 
@@ -18,6 +24,11 @@
 #include <Carbon/Carbon.h>
 static pascal OSStatus windowHandler (EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void* inUserData);
 static pascal void idleTimerProc (EventLoopTimerRef inTimer, void* inUserData);
+#elif _LINUX
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
+#include <X11/Xatom.h>
 #endif
 
 #include <stdio.h>
@@ -56,6 +67,66 @@ bool checkEffectEditor (AEffect* effect)
 	DialogBoxIndirectParam (GetModuleHandle (0), &t, 0, (DLGPROC)EditorProc, (LPARAM)effect);
 
 	theEffect = 0;
+
+#elif _LINUX
+	Display *dpy;
+	Window win;
+	XEvent e;
+	char effect_name[256]; // arbitrary, vst GetEffectName is max 32 chars
+	Atom wmDeleteMessage, prop_atom, val_atom;
+
+	// create the window
+	dpy = XOpenDisplay(NULL);
+	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 300, 300, 0, 0, 0);
+
+	// we want an event when the window is being closed
+	wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", false);
+	XSetWMProtocols(dpy, win, &wmDeleteMessage, 1);
+
+	// Make the window a Dialog, maybe the window manager will place it centered
+	prop_atom = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
+	val_atom = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
+	XChangeProperty(dpy, win, prop_atom, XA_ATOM, 32, PropModeReplace, (unsigned char *)&val_atom, 1);
+
+	// prepare the plugin name in the title bar
+	effect->dispatcher(effect, effGetEffectName, 0, 0, effect_name, 0);
+	strcat(effect_name, " [minihost]");
+	XStoreName(dpy, win, effect_name);
+
+	// Get and prepare editor size
+	ERect* eRect = 0;
+	printf ("HOST> Get editor rect..\n");
+	effect->dispatcher (effect, effEditGetRect, 0, 0, &eRect, 0);
+	if (eRect) {
+		int width = eRect->right - eRect->left;
+		int height = eRect->bottom - eRect->top;
+		printf("GetRect -> %d, %d\n", width, height);
+		XResizeWindow(dpy, win, width, height);
+	}
+
+	// ? Is it correct to effEditGetRect above, before effEditOpen ?
+	// Display the window, let the plugin populate it
+	printf ("HOST> Open editor...\n");
+        XMapWindow(dpy, win);
+	XFlush(dpy);
+	effect->dispatcher (effect, effEditOpen, 0, (VstIntPtr) dpy, (void*) win, 0);
+	
+	// Needs adjusting according to events we want to handle in the loop below
+	XSelectInput(dpy, win, SubstructureNotifyMask | ButtonPressMask | ButtonReleaseMask
+		     | ButtonMotionMask | ExposureMask | KeyPressMask);
+
+	while (true) {
+	   XNextEvent(dpy, &e);
+	   // handle events as needed
+	   if (e.type == ClientMessage && e.xclient.data.l[0] == wmDeleteMessage) {
+	      break;
+	   }
+	}
+	printf ("HOST> Close editor..\n");
+	effect->dispatcher (effect, effEditClose, 0, 0, 0, 0);
+	XCloseDisplay(dpy);	
+
+
 #elif TARGET_API_MAC_CARBON
 	WindowRef window;
 	Rect mRect = {0, 0, 300, 300};

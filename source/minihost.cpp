@@ -1,3 +1,6 @@
+// Added support for Linux/Xlib
+// Johan Ekenberg, johan@ekenberg.se
+
 //-------------------------------------------------------------------------------------------------------
 // VST Plug-Ins SDK
 // Version 2.4		$Date: 2006/11/13 09:08:28 $
@@ -10,12 +13,18 @@
 // © 2006, Steinberg Media Technologies, All Rights Reserved
 //-------------------------------------------------------------------------------------------------------
 
+#if _LINUX
+#define __cdecl
+#endif
+
 #include "pluginterfaces/vst2.x/aeffectx.h"
 
 #if _WIN32
 #include <windows.h>
 #elif TARGET_API_MAC_CARBON
 #include <CoreFoundation/CoreFoundation.h>
+#elif _LINUX
+#include <dlfcn.h>
 #endif
 
 #include <stdio.h>
@@ -50,6 +59,8 @@ struct PluginLoader
 		#elif TARGET_API_MAC_CARBON
 			CFBundleUnloadExecutable ((CFBundleRef)module);
 			CFRelease ((CFBundleRef)module);
+		#elif _LINUX
+			dlclose(module);
 		#endif
 		}
 	}
@@ -70,6 +81,12 @@ struct PluginLoader
 		CFRelease (url);
 		if (module && CFBundleLoadExecutable ((CFBundleRef)module) == false)
 			return false;
+	#elif _LINUX
+		module = dlopen(fileName, RTLD_LAZY);
+		if (! module) {
+		   printf("dlopen error: %s\n", dlerror());
+		   return false;
+		}
 	#endif
 		return module != 0;
 	}
@@ -85,6 +102,9 @@ struct PluginLoader
 		mainProc = (PluginEntryProc)CFBundleGetFunctionPointerForName ((CFBundleRef)module, CFSTR("VSTPluginMain"));
 		if (!mainProc)
 			mainProc = (PluginEntryProc)CFBundleGetFunctionPointerForName ((CFBundleRef)module, CFSTR("main_macho"));
+	#elif _LINUX
+		mainProc = (PluginEntryProc) dlsym(module, "VSTPluginMain");
+		if (! mainProc) mainProc = (PluginEntryProc) dlsym(module, "main");
 	#endif
 		return mainProc;
 	}
@@ -125,14 +145,19 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	const char* fileName = "again.dll";
+	//const char* fileName = "again.dll";
 	//const char* fileName = "adelay.dll";
 	//const char* fileName = "surrounddelay.dll";
 	//const char* fileName = "vstxsynth.dll";
 	//const char* fileName = "drawtest.dll";
 
-	if (argc > 1)
-		fileName = argv[1];
+	if (argc < 2) {
+	   printf ("Usage: %s plugin-to-load\n", argv[0]);
+	   return -1;
+	}
+
+	const char* fileName = argv[1];
+
 
 	printf ("HOST> Load library...\n");
 	PluginLoader loader;
