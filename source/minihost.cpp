@@ -1,4 +1,4 @@
-// Added support for Linux/Xlib
+// 2012: Added support for Linux/Xlib
 // Johan Ekenberg, johan@ekenberg.se
 
 //-------------------------------------------------------------------------------------------------------
@@ -124,7 +124,7 @@ static bool checkPlatform ()
 	int sizeOfVstInt32 = sizeof (VstInt32);
 	int sizeOfPointer = sizeof (void*);
 	int sizeOfAEffect = sizeof (AEffect);
-	
+
 	printf ("VstIntPtr = %d Bytes, VstInt32 = %d Bytes, Pointer = %d Bytes, AEffect = %d Bytes\n\n",
 			sizeOfVstIntPtr, sizeOfVstInt32, sizeOfPointer, sizeOfAEffect);
 
@@ -211,7 +211,7 @@ void checkEffectProperties (AEffect* effect)
 
 	printf ("Name = %s\nVendor = %s\nProduct = %s\n\n", effectName, vendorString, productString);
 
-	printf ("numPrograms = %d\nnumParams = %d\nnumInputs = %d\nnumOutputs = %d\n\n", 
+	printf ("numPrograms = %d\nnumParams = %d\nnumInputs = %d\nnumOutputs = %d\n\n",
 			effect->numPrograms, effect->numParams, effect->numInputs, effect->numOutputs);
 
 	// Iterate programs...
@@ -277,7 +277,7 @@ void checkEffectProcessing (AEffect* effect)
 	float** outputs = 0;
 	VstInt32 numInputs = effect->numInputs;
 	VstInt32 numOutputs = effect->numOutputs;
-	
+
 	if (numInputs > 0)
 	{
 		inputs = new float*[numInputs];

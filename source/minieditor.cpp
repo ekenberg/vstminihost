@@ -1,4 +1,4 @@
-// Added support for Linux/Xlib
+// 2012: Added support for Linux/Xlib
 // Johan Ekenberg, johan@ekenberg.se
 
 //-------------------------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ bool checkEffectEditor (AEffect* effect)
 #if _WIN32
 	theEffect = effect;
 
-	MyDLGTEMPLATE t;	
+	MyDLGTEMPLATE t;
 	t.style = WS_POPUPWINDOW|WS_DLGFRAME|DS_MODALFRAME|DS_CENTER;
 	t.cx = 100;
 	t.cy = 100;
@@ -74,6 +74,9 @@ bool checkEffectEditor (AEffect* effect)
 	XEvent e;
 	char effect_name[256]; // arbitrary, vst GetEffectName is max 32 chars
 	Atom wmDeleteMessage, prop_atom, val_atom;
+
+        // prepare for threads
+        XInitThreads();
 
 	// create the window
 	dpy = XOpenDisplay(NULL);
@@ -110,7 +113,7 @@ bool checkEffectEditor (AEffect* effect)
         XMapWindow(dpy, win);
 	XFlush(dpy);
 	effect->dispatcher (effect, effEditOpen, 0, (VstIntPtr) dpy, (void*) win, 0);
-	
+
 	// Needs adjusting according to events we want to handle in the loop below
 	XSelectInput(dpy, win, SubstructureNotifyMask | ButtonPressMask | ButtonReleaseMask
 		     | ButtonMotionMask | ExposureMask | KeyPressMask);
@@ -124,7 +127,7 @@ bool checkEffectEditor (AEffect* effect)
 	}
 	printf ("HOST> Close editor..\n");
 	effect->dispatcher (effect, effEditClose, 0, 0, 0, 0);
-	XCloseDisplay(dpy);	
+	XCloseDisplay(dpy);
 
 
 #elif TARGET_API_MAC_CARBON
@@ -154,7 +157,7 @@ bool checkEffectEditor (AEffect* effect)
 		GetWindowBounds (window, kWindowContentRgn, &bounds);
 		bounds.right = bounds.left + width;
 		bounds.bottom = bounds.top + height;
-		SetWindowBounds (window, kWindowContentRgn, &bounds); 
+		SetWindowBounds (window, kWindowContentRgn, &bounds);
 	}
 	RepositionWindow (window, NULL, kWindowCenterOnMainScreen);
 	ShowWindow (window);
@@ -164,7 +167,7 @@ bool checkEffectEditor (AEffect* effect)
 
 	RunAppModalLoopForWindow (window);
 	RemoveEventLoopTimer (idleEventLoopTimer);
-	
+
 	printf ("HOST> Close editor..\n");
 	effect->dispatcher (effect, effEditClose, 0, 0, 0, 0);
 	ReleaseWindow (window);
