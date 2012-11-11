@@ -25,6 +25,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #elif _LINUX
 #include <dlfcn.h>
+#include <X11/Xlib.h>
 #endif
 
 #include <stdio.h>
@@ -158,6 +159,10 @@ int main (int argc, char* argv[])
 
 	const char* fileName = argv[1];
 
+#if _LINUX
+        // prepare Xlib for threads
+        XInitThreads();
+#endif
 
 	printf ("HOST> Load library...\n");
 	PluginLoader loader;

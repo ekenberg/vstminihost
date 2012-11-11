@@ -75,9 +75,6 @@ bool checkEffectEditor (AEffect* effect)
 	char effect_name[256]; // arbitrary, vst GetEffectName is max 32 chars
 	Atom wmDeleteMessage, prop_atom, val_atom;
 
-        // prepare for threads
-        XInitThreads();
-
 	// create the window
 	dpy = XOpenDisplay(NULL);
 	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 300, 300, 0, 0, 0);
