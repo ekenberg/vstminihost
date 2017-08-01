@@ -1,0 +1,1 @@
+Please put inside of your vstsdk2.4 folder here.

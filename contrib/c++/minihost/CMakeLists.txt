@@ -1,0 +1,57 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
+
+set(PROJECT_NAME "minihost")
+
+PROJECT(${PROJECT_NAME})
+
+add_definitions(-DTARGET_API_MAC_CARBON)
+
+# Necessary Mac frameworks are added here
+if(APPLE)
+    find_library(CORESERVICES_FRAMEWORK CoreServices)
+    find_library(CARBON_FRAMEWORK Carbon)
+    mark_as_advanced(
+        CORESERVICES_FRAMEWORK
+        CARBON_FRAMEWORK
+    )
+    set(MAC_FRAMEWORKS 
+        ${CORESERVICES_FRAMEWORK}
+        ${CARBON_FRAMEWORK} 
+    )
+endif()
+
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+SET(SRC
+    src/main.cpp
+)
+
+FILE(GLOB EBU_R128
+    ebu_r128/*
+)
+
+FILE(GLOB MINIHOST
+    minihost/minihost.h
+    minihost/minihost.cpp
+)
+
+SOURCE_GROUP("src" FILES ${SRC})
+SOURCE_GROUP("minihost" FILES ${MINIHOST})
+
+INCLUDE_DIRECTORIES(
+	./
+	./vstsdk2.4
+)
+
+LINK_DIRECTORIES(
+)
+
+ADD_EXECUTABLE(${PROJECT_NAME}
+	${SRC}
+	${MINIHOST}
+)
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}
+	${MAC_FRAMEWORKS}
+)
